@@ -266,6 +266,15 @@ AWS_ACCOUNTS = UnspecifiedConfigSection(
         default=None,
         help="Optionally set this for a different home directory path. e.g. s3a://gethue"
       ),
+      DEFAULT_ROOT_BUCKETS=Config(
+        key="default_root-buckets",
+        type=list,
+        default=None,
+        help=_(
+          "Optionally set this list of buckets to override the collection of buckets which "
+          "will be displayed in the filebrowser when navigating to s3a://."
+        )
+      ),
     )
   )
 )

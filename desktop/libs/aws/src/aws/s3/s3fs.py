@@ -102,6 +102,16 @@ def get_s3_home_directory(user=None):
   return remote_home_s3
 
 
+def get_s3_default_root_buckets():
+  if (
+    'default' in AWS_ACCOUNTS
+    and AWS_ACCOUNTS['default'].DEFAULT_ROOT_BUCKETS.get()
+    and all(bucket.startswith('s3a://') for bucket in AWS_ACCOUNTS['default'].DEFAULT_ROOT_BUCKETS.get())
+  ):
+    return AWS_ACCOUNTS['default'].DEFAULT_ROOT_BUCKETS.get()
+  return None
+
+
 class S3FileSystem(object):
   def __init__(self, s3_connection, expiration=None, fs='s3a', headers=None, filebrowser_action=PERMISSION_ACTION_S3):
     self._s3_connection = s3_connection
@@ -320,8 +330,12 @@ class S3FileSystem(object):
 
     if S3FileSystem.isroot(path):
       try:
-        return sorted(
-          [S3Stat.from_bucket(b, self.fs) for b in self._s3_connection.get_all_buckets(headers=self.header_values)], key=lambda x: x.name)
+        default_root_buckets = get_s3_default_root_buckets()
+        if default_root_buckets is not None:
+          ret = [S3Stat.from_bucket(self._s3_connection.get_bucket(b), self.fs) for b in default_root_buckets]
+        else:
+          ret = [S3Stat.from_bucket(b, self.fs) for b in self._s3_connection.get_all_buckets(headers=self.header_values)]
+        return sorted(ret, key=lambda x: x.name)
       except S3FileSystemException as e:
         raise e
       except S3ResponseError as e:
